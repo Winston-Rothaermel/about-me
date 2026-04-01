@@ -1,0 +1,40 @@
+/* mywork.css */
+.work-hero {
+  padding: 10rem 0 4rem;
+  background: var(--black);
+}
+.work-intro {
+  color: var(--gray);
+  font-size: 1.1rem;
+  max-width: 600px;
+}
+.work-card {
+  background: var(--dark2);
+  border: 1px solid var(--border);
+  padding: 2rem;
+  height: 100%;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.work-card:hover {
+  border-color: rgba(232,255,0,0.3);
+  transform: translateY(-4px);
+}
+.featured-card { border-color: rgba(232,255,0,0.2); }
+.work-card-icon {
+  font-size: 2rem;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+.work-card-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 1px;
+  margin-bottom: 0.8rem;
+}
+.work-card-desc {
+  font-size: 0.9rem;
+  color: var(--gray);
+  line-height: 1.7;
+  margin-bottom: 1.2rem;
+}
+.work-card-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }

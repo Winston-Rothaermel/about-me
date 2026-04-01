@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pace Calculator App — Winston Rothaermel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --black: #0a0a0a;
+      --dark: #111111;
+      --dark2: #1a1a1a;
+      --white: #ffffff;
+      --accent: #e8ff00;
+      --accent2: #ff4d00;
+      --gray: #888888;
+      --border: rgba(255,255,255,0.08);
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font-body); background: var(--black); color: var(--white); min-height: 100vh; }
+
+    .app-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.2rem 3rem;
+      background: rgba(10,10,10,0.95);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 99;
+    }
+    .app-nav a { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 3px; color: var(--gray); text-decoration: none; transition: color 0.2s; }
+    .app-nav a:hover { color: var(--accent); }
+    .app-nav-title { font-family: var(--font-display); font-size: 1.5rem; color: var(--accent); letter-spacing: 2px; }
+
+    .app-hero { text-align: center; padding: 5rem 2rem 3rem; border-bottom: 1px solid var(--border); }
+    .app-hero-tag { font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 5px; color: var(--accent2); margin-bottom: 1rem; display: block; }
+    .app-hero h1 { font-family: var(--font-display); font-size: clamp(3rem, 7vw, 6rem); letter-spacing: 3px; margin-bottom: 0.5rem; }
+    .app-hero p { color: var(--gray); font-size: 1rem; max-width: 500px; margin: 0 auto; }
+
+    .app-main { max-width: 800px; margin: 0 auto; padding: 3rem 2rem; }
+
+    .calculator-section { background: var(--dark2); border: 1px solid var(--border); padding: 2.5rem; margin-bottom: 2rem; }
+    .section-title { font-family: var(--font-display); font-size: 1.8rem; letter-spacing: 2px; margin-bottom: 1.5rem; color: var(--accent); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-group label { font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 3px; color: var(--gray); }
+    .form-group input, .form-group select {
+      background: var(--black); border: 1px solid var(--border);
+      color: var(--white); padding: 0.8rem 1rem;
+      font-family: var(--font-mono); font-size: 1rem;
+      outline: none; transition: border-color 0.2s; -webkit-appearance: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+    .form-group select option { background: var(--dark2); }
+    .calc-btn {
+      margin-top: 1.5rem; width: 100%; padding: 1rem;
+      background: var(--accent); color: var(--black);
+      font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 3px;
+      border: none; cursor: pointer; font-weight: 700; transition: background 0.2s;
+    }
+    .calc-btn:hover { background: #d4e800; }
+
+    .results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; opacity: 0; transition: opacity 0.4s; }
+    .results-grid.visible { opacity: 1; }
+    .result-card { background: var(--dark2); border: 1px solid var(--border); padding: 1.5rem; text-align: center; }
+    .result-card.highlight { border-color: rgba(232,255,0,0.4); }
+    .result-label { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 3px; color: var(--gray); margin-bottom: 0.5rem; display: block; }
+    .result-val { font-family: var(--font-display); font-size: 2.2rem; color: var(--white); letter-spacing: 1px; }
+    .result-card.highlight .result-val { color: var(--accent); }
+
+    .splits-section { background: var(--dark2); border: 1px solid var(--border); padding: 2.5rem; margin-bottom: 2rem; }
+    .splits-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .splits-table th { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 3px; color: var(--gray); text-align: left; padding: 0.7rem 0.5rem; border-bottom: 1px solid var(--border); }
+    .splits-table td { font-family: var(--font-mono); font-size: 0.85rem; padding: 0.7rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .splits-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .splits-table .accent-td { color: var(--accent); }
+
+    /* ADVISOR */
+    .ai-section { background: var(--dark2); border: 1px solid var(--border); padding: 2.5rem; margin-bottom: 2rem; }
+    .ai-topics { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .topic-btn {
+      font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 2px;
+      padding: 0.5rem 1rem; background: transparent; border: 1px solid var(--border);
+      color: var(--gray); cursor: pointer; transition: all 0.2s;
+    }
+    .topic-btn:hover, .topic-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,0,0.06); }
+    .ai-form { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .ai-input {
+      flex: 1; min-width: 200px; background: var(--black); border: 1px solid var(--border);
+      color: var(--white); padding: 0.8rem 1rem; font-family: var(--font-body); font-size: 0.95rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    .ai-input:focus { border-color: var(--accent); }
+    .ai-btn {
+      padding: 0.8rem 1.8rem; background: var(--accent2); color: var(--white);
+      font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 2px;
+      border: none; cursor: pointer; font-weight: 700; transition: background 0.2s; white-space: nowrap;
+    }
+    .ai-btn:hover { background: #e04400; }
+    .ai-output {
+      background: var(--black); border: 1px solid var(--border);
+      padding: 1.5rem; min-height: 130px; font-size: 0.92rem; color: #ccc; line-height: 1.85;
+    }
+    .ai-output .placeholder { color: var(--gray); font-style: italic; }
+    .response-label { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 3px; color: var(--accent); display: block; margin-bottom: 0.8rem; }
+    .typing-cursor::after { content: '|'; animation: blink 0.7s step-end infinite; color: var(--accent); }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    .app-footer { text-align: center; padding: 2rem; border-top: 1px solid var(--border); font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 3px; color: var(--gray); margin-top: 3rem; }
+    .app-footer a { color: var(--gray); text-decoration: none; }
+    .app-footer a:hover { color: var(--accent); }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .results-grid { grid-template-columns: 1fr; }
+      .app-nav { padding: 1rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="app-nav">
+    <a href="scratch.html">← RUNNING PAGE</a>
+    <span class="app-nav-title">PACE CALC</span>
+    <a href="index.html">MAIN SITE →</a>
+  </nav>
+
+  <div class="app-hero">
+    <span class="app-hero-tag">WEB APP · BUILT WITH AI ASSISTANCE</span>
+    <h1>RUNNING PACE<br>CALCULATOR</h1>
+    <p>Calculate your race splits and get expert training advice on any topic.</p>
+  </div>
+
+  <div class="app-main">
+
+    <div class="calculator-section">
+      <div class="section-title">CALCULATE YOUR PACE</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>RACE DISTANCE</label>
+          <select id="distance">
+            <option value="3.1">5K (3.1 mi)</option>
+            <option value="6.2">10K (6.2 mi)</option>
+            <option value="13.1">Half Marathon (13.1 mi)</option>
+            <option value="26.2" selected>Marathon (26.2 mi)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>GOAL TIME — HOURS</label>
+          <input type="number" id="hours" min="0" max="24" value="4"/>
+        </div>
+        <div class="form-group">
+          <label>GOAL TIME — MINUTES</label>
+          <input type="number" id="minutes" min="0" max="59" value="0"/>
+        </div>
+        <div class="form-group">
+          <label>GOAL TIME — SECONDS</label>
+          <input type="number" id="seconds" min="0" max="59" value="0"/>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calculate()">CALCULATE SPLITS</button>
+    </div>
+
+    <div class="results-grid" id="resultsGrid">
+      <div class="result-card highlight">
+        <span class="result-label">PER MILE PACE</span>
+        <span class="result-val" id="perMile">—</span>
+      </div>
+      <div class="result-card">
+        <span class="result-label">PER KM PACE</span>
+        <span class="result-val" id="perKm">—</span>
+      </div>
+      <div class="result-card">
+        <span class="result-label">FINISH TIME</span>
+        <span class="result-val" id="finishTime">—</span>
+      </div>
+    </div>
+
+    <div class="splits-section" id="splitsSection" style="display:none;">
+      <div class="section-title">MILE SPLITS</div>
+      <table class="splits-table">
+        <thead><tr><th>MILE</th><th>SPLIT TIME</th><th>CUMULATIVE</th></tr></thead>
+        <tbody id="splitsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="ai-section">
+      <div class="section-title">TRAINING ADVISOR</div>
+      <p style="color:var(--gray);font-size:0.9rem;margin-bottom:1.2rem;">Pick a topic or type your own question below.</p>
+      <div class="ai-topics">
+        <button class="topic-btn" onclick="quickAsk('taper')">TAPERING</button>
+        <button class="topic-btn" onclick="quickAsk('pace')">PACING STRATEGY</button>
+        <button class="topic-btn" onclick="quickAsk('nutrition')">NUTRITION</button>
+        <button class="topic-btn" onclick="quickAsk('injury')">INJURY PREVENTION</button>
+        <button class="topic-btn" onclick="quickAsk('recovery')">RECOVERY</button>
+        <button class="topic-btn" onclick="quickAsk('mental')">MENTAL TOUGHNESS</button>
+        <button class="topic-btn" onclick="quickAsk('longrun')">LONG RUNS</button>
+        <button class="topic-btn" onclick="quickAsk('raceday')">RACE DAY TIPS</button>
+      </div>
+      <div class="ai-form">
+        <input type="text" class="ai-input" id="aiQuestion" placeholder="e.g. How do I avoid hitting the wall?" onkeydown="if(event.key==='Enter') askAdvisor()"/>
+        <button class="ai-btn" onclick="askAdvisor()">GET ADVICE</button>
+      </div>
+      <div class="ai-output" id="aiOutput">
+        <span class="placeholder">Select a topic above or type your own question...</span>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="app-footer">
+    WINSTON ROTHAERMEL · PACE CALCULATOR ·
+    <a href="index.html">MAIN SITE</a> ·
+    <a href="scratch.html">RUNNING PAGE</a>
+  </footer>
+
+  <script>
+    // ── CALCULATOR ──────────────────────────────────────────────────
+    function timeToSeconds(h,m,s){ return h*3600+m*60+s; }
+    function toMMSS(sec){ const m=Math.floor(sec/60),s=Math.round(sec%60); return `${m}:${s.toString().padStart(2,'0')}`; }
+    function toHHMMSS(sec){ const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=Math.round(sec%60); return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; }
+
+    function calculate(){
+      const dist=parseFloat(document.getElementById('distance').value);
+      const h=parseInt(document.getElementById('hours').value)||0;
+      const m=parseInt(document.getElementById('minutes').value)||0;
+      const s=parseInt(document.getElementById('seconds').value)||0;
+      const total=timeToSeconds(h,m,s);
+      if(total<=0) return;
+      const ppm=total/dist, ppk=total/(dist*1.60934);
+      document.getElementById('perMile').textContent=toMMSS(ppm);
+      document.getElementById('perKm').textContent=toMMSS(ppk);
+      document.getElementById('finishTime').textContent=toHHMMSS(total);
+      document.getElementById('resultsGrid').classList.add('visible');
+      const tbody=document.getElementById('splitsBody');
+      tbody.innerHTML='';
+      for(let i=1;i<=Math.ceil(dist);i++){
+        const cum=ppm*Math.min(i,dist), split=ppm*Math.min(1,dist-(i-1));
+        tbody.innerHTML+=`<tr><td class="accent-td">${i<=dist?i:dist.toFixed(1)}</td><td>${toMMSS(split)}</td><td>${toHHMMSS(cum)}</td></tr>`;
+      }
+      document.getElementById('splitsSection').style.display='block';
+    }
+
+    // ── TRAINING ADVISOR ────────────────────────────────────────────
+    const advice = {
+      taper: {
+        label: "TAPERING",
+        text: "Tapering is the 2–3 week period before your race where you reduce mileage to let your body fully recover and peak. Cut your weekly volume by about 20–30% each week while keeping some intensity with short, fast efforts. Don't panic if your legs feel heavy or sluggish early in the taper — that's completely normal and called \"taper madness.\" Avoid the temptation to cram in extra miles. Trust your training. By race morning, your legs should feel fresh, springy, and ready to go."
+      },
+      pace: {
+        label: "PACING STRATEGY",
+        text: "The golden rule of long-distance racing: start slower than you think you need to. Going out too fast is the #1 race killer — you'll pay for it hard after mile 18. Aim for negative splits, meaning your second half is slightly faster than your first. Break the race into thirds: conservative first third, controlled middle third, race the final third with whatever you have left. Use your GPS watch to stay honest in the first few miles when adrenaline wants to push you way faster than planned."
+      },
+      nutrition: {
+        label: "NUTRITION & FUELING",
+        text: "For races over 75 minutes, you need to fuel on the go. Start taking gels or chews around mile 5–6 — don't wait until you're hungry, because by then it's too late and your glycogen is already crashing. Aim for 30–60g of carbohydrates per hour. Practice with exactly the nutrition that will be on the race course so nothing surprises your stomach on race day. Hydrate consistently at every aid station rather than chugging water all at once. Salt tablets can help prevent cramping on hot days or very long efforts."
+      },
+      injury: {
+        label: "INJURY PREVENTION",
+        text: "The best injury prevention is increasing your mileage gradually — never more than 10% per week. Most running injuries come from doing too much, too soon, too fast. Prioritize strength training: strong hips and glutes protect your knees and prevent IT band issues. Replace your shoes every 300–500 miles. Never skip rest days — your body gets stronger during recovery, not during the run itself. If something feels off, take a day off early rather than grinding through it and turning a minor ache into a weeks-long setback."
+      },
+      recovery: {
+        label: "RECOVERY",
+        text: "Sleep is the single most powerful recovery tool you have — aim for 8+ hours during heavy training blocks. After hard workouts, prioritize protein within 30 minutes to help muscle repair. Easy days should be genuinely easy: most runners run their easy runs too fast, which limits the recovery they need. Foam rolling and mobility work help, but they're secondary to sleep and nutrition. After a marathon, plan for 2–4 weeks of very easy running before returning to any structured training."
+      },
+      mental: {
+        label: "MENTAL TOUGHNESS",
+        text: "Long-distance running is 90% mental after a certain point — your body can handle far more than your mind believes. Break the race into small, manageable segments: just get to the next mile marker, the next aid station, the next turn. Use a mantra when things get hard — a short, simple phrase you can repeat to drown out negative thoughts. Visualize the race going well the night before. Embrace discomfort as part of the process; the ability to stay calm and present when it really hurts is exactly what separates finishers from DNFs."
+      },
+      longrun: {
+        label: "LONG RUNS",
+        text: "The long run is the cornerstone of marathon training. Run it at a truly easy, conversational pace — about 60–90 seconds per mile slower than your goal race pace. The goal is time on feet and aerobic adaptation, not speed. Practice your race-day nutrition and gear on long runs so nothing is new come race day. Build distance gradually, and don't feel like every long run needs to be longer than the last — it's perfectly fine to plateau or repeat a distance. Most plans peak at 20–22 miles, which is more than enough to finish a marathon strong."
+      },
+      raceday: {
+        label: "RACE DAY TIPS",
+        text: "Nothing new on race day — no new shoes, new gels, new clothes, or new warmup routines. Wake up at least 2–3 hours before the gun to give your body time to wake up and digest breakfast. Arrive early to handle bag check, bathrooms, and warmup without stress. Seed yourself in the correct corral — starting too fast with faster runners is a very common mistake. In the first mile, keep checking your watch even as the crowd and adrenaline push you. And most importantly: smile at mile 20. You trained hard for this moment."
+      }
+    };
+
+    const keywordMap = [
+      { keys: ['taper','rest week','before race','final week','peak week'], topic: 'taper' },
+      { keys: ['pace','pacing','split','too fast','negative split','start slow','even pace'], topic: 'pace' },
+      { keys: ['eat','food','gel','fuel','nutrition','carb','calorie','energy','hunger','stomach','hydrat','water','salt','electrolyte'], topic: 'nutrition' },
+      { keys: ['injur','pain','knee','shin','blister','prevent','hurt','sore','ache','it band','plantar','stress fracture'], topic: 'injury' },
+      { keys: ['recover','rest','sleep','foam roll','sore after','after race','post race','post-race'], topic: 'recovery' },
+      { keys: ['mental','mind','tough','motivat','wall','give up','quit','hard','difficult','mantra','focus','bonk'], topic: 'mental' },
+      { keys: ['long run','20 mile','18 mile','weekend run','easy run','base'], topic: 'longrun' },
+      { keys: ['race day','morning of','warm up','warmup','race morning','start line','corral','what to wear','breakfast race'], topic: 'raceday' },
+    ];
+
+    function findTopic(q){
+      const lower=q.toLowerCase();
+      for(const entry of keywordMap){
+        if(entry.keys.some(k=>lower.includes(k))) return entry.topic;
+      }
+      return null;
+    }
+
+    function typeOut(topic){
+      const item=advice[topic];
+      const output=document.getElementById('aiOutput');
+      output.innerHTML=`<span class="response-label">// ${item.label}</span><span id="typed"></span><span class="typing-cursor"></span>`;
+      const typed=document.getElementById('typed');
+      let i=0;
+      function type(){ if(i<item.text.length){ typed.textContent+=item.text[i++]; setTimeout(type,11); } else { output.querySelector('.typing-cursor').remove(); } }
+      type();
+      document.querySelectorAll('.topic-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.topic-btn').forEach(b=>{ if(b.getAttribute('onclick').includes(`'${topic}'`)) b.classList.add('active'); });
+    }
+
+    function quickAsk(topic){ typeOut(topic); }
+
+    function askAdvisor(){
+      const q=document.getElementById('aiQuestion').value.trim();
+      if(!q) return;
+      const topic=findTopic(q);
+      if(topic){
+        typeOut(topic);
+      } else {
+        const output=document.getElementById('aiOutput');
+        output.innerHTML=`<span class="response-label">// GENERAL ADVICE</span>The most important principle in long-distance running is consistency. Show up day after day, respect your easy days, attack your hard days, and trust that fitness accumulates even when it doesn't feel like it. Try clicking one of the topic buttons above — tapering, nutrition, pacing, injury prevention, mental toughness, or race day tips — for targeted coaching advice.`;
+      }
+      document.getElementById('aiQuestion').value='';
+    }
+
+    calculate();
+  </script>
+</body>
+</html>
